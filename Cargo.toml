@@ -1,0 +1,10 @@
+[package]
+name = "albw-wasm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# randomizer = { git = "https://github.com/rickfay/z17-randomizer", branch = "v0.3.0" }
+randomizer = { path = "../0_git/randomizer" }
