@@ -1,10 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use wasm_bindgen::prelude::*;
-use randomizer::{filler::{assumed_search, prefill_check_map}, Settings, Seed, world::build_world_graph, filler_item::FillerItem};
-use albw::Item;
+use randomizer::{filler::{assumed_search, prefill_check_map, get_items}, Settings, Seed, world::build_world_graph, filler_item::FillerItem};
 use rand::{rngs::StdRng, SeedableRng};
-use serde::{Serialize, Deserialize};
+use lazy_static::lazy_static;
 
 #[wasm_bindgen]
 extern "C" {
@@ -24,379 +23,340 @@ extern "C" {
     fn log_many(a: &str, b: &str);
 }
 
-#[derive(Serialize, Deserialize)]
-pub enum ALogicMode {
-    Normal,
-    Hard,
-    GlitchBasic,
-    GlitchAdvanced,
-    GlitchHell,
-    NoLogic,
+// Create static variable of mappings from stringToFillerItem
+lazy_static! {
+    static ref FILLER_ITEM_MAP: HashMap<std::string::String, FillerItem> = {
+        let mut m = HashMap::new();
+        m.insert("Bow01".to_string(), FillerItem::Bow01);
+        m.insert("Bow02".to_string(), FillerItem::Bow02);
+        m.insert("Boomerang01".to_string(), FillerItem::Boomerang01);
+        m.insert("Boomerang02".to_string(), FillerItem::Boomerang02);
+        m.insert("Hookshot01".to_string(), FillerItem::Hookshot01);
+        m.insert("Hookshot02".to_string(), FillerItem::Hookshot02);
+        m.insert("Bombs01".to_string(), FillerItem::Bombs01);
+        m.insert("Bombs02".to_string(), FillerItem::Bombs02);
+        m.insert("FireRod01".to_string(), FillerItem::FireRod01);
+        m.insert("FireRod02".to_string(), FillerItem::FireRod02);
+        m.insert("IceRod01".to_string(), FillerItem::IceRod01);
+        m.insert("IceRod02".to_string(), FillerItem::IceRod02);
+        m.insert("Hammer01".to_string(), FillerItem::Hammer01);
+        m.insert("Hammer02".to_string(), FillerItem::Hammer02);
+        m.insert("SandRod01".to_string(), FillerItem::SandRod01);
+        m.insert("SandRod02".to_string(), FillerItem::SandRod02);
+        m.insert("TornadoRod01".to_string(), FillerItem::TornadoRod01);
+        m.insert("TornadoRod02".to_string(), FillerItem::TornadoRod02);
+        m.insert("Bell".to_string(), FillerItem::Bell);
+        m.insert("StaminaScroll".to_string(), FillerItem::StaminaScroll);
+        m.insert("BowOfLight".to_string(), FillerItem::BowOfLight);
+        m.insert("PegasusBoots".to_string(), FillerItem::PegasusBoots);
+        m.insert("Flippers".to_string(), FillerItem::Flippers);
+        m.insert("RaviosBracelet01".to_string(), FillerItem::RaviosBracelet01);
+        m.insert("RaviosBracelet02".to_string(), FillerItem::RaviosBracelet02);
+        m.insert("HylianShield".to_string(), FillerItem::HylianShield);
+        m.insert("SmoothGem".to_string(), FillerItem::SmoothGem);
+        m.insert("LetterInABottle".to_string(), FillerItem::LetterInABottle);
+        m.insert("PremiumMilk".to_string(), FillerItem::PremiumMilk);
+        m.insert("Pouch".to_string(), FillerItem::Pouch);
+        m.insert("BeeBadge".to_string(), FillerItem::BeeBadge);
+        m.insert("HintGlasses".to_string(), FillerItem::HintGlasses);
+        m.insert("RupeeGreen".to_string(), FillerItem::RupeeGreen);
+        m.insert("RupeeBlue".to_string(), FillerItem::RupeeBlue);
+        m.insert("RupeeRed".to_string(), FillerItem::RupeeRed);
+        m.insert("RupeePurple01".to_string(), FillerItem::RupeePurple01);
+        m.insert("RupeePurple02".to_string(), FillerItem::RupeePurple02);
+        m.insert("RupeePurple03".to_string(), FillerItem::RupeePurple03);
+        m.insert("RupeePurple04".to_string(), FillerItem::RupeePurple04);
+        m.insert("RupeePurple05".to_string(), FillerItem::RupeePurple05);
+        m.insert("RupeePurple06".to_string(), FillerItem::RupeePurple06);
+        m.insert("RupeePurple07".to_string(), FillerItem::RupeePurple07);
+        m.insert("RupeePurple08".to_string(), FillerItem::RupeePurple08);
+        m.insert("RupeePurple09".to_string(), FillerItem::RupeePurple09);
+        m.insert("RupeePurple10".to_string(), FillerItem::RupeePurple10);
+        m.insert("RupeePurple11".to_string(), FillerItem::RupeePurple11);
+        m.insert("RupeePurple12".to_string(), FillerItem::RupeePurple12);
+        m.insert("RupeePurple13".to_string(), FillerItem::RupeePurple13);
+        m.insert("RupeePurple14".to_string(), FillerItem::RupeePurple14);
+        m.insert("RupeePurple15".to_string(), FillerItem::RupeePurple15);
+        m.insert("RupeePurple16".to_string(), FillerItem::RupeePurple16);
+        m.insert("RupeePurple17".to_string(), FillerItem::RupeePurple17);
+        m.insert("RupeePurple18".to_string(), FillerItem::RupeePurple18);
+        m.insert("RupeeSilver01".to_string(), FillerItem::RupeeSilver01);
+        m.insert("RupeeSilver02".to_string(), FillerItem::RupeeSilver02);
+        m.insert("RupeeSilver03".to_string(), FillerItem::RupeeSilver03);
+        m.insert("RupeeSilver04".to_string(), FillerItem::RupeeSilver04);
+        m.insert("RupeeSilver05".to_string(), FillerItem::RupeeSilver05);
+        m.insert("RupeeSilver06".to_string(), FillerItem::RupeeSilver06);
+        m.insert("RupeeSilver07".to_string(), FillerItem::RupeeSilver07);
+        m.insert("RupeeSilver08".to_string(), FillerItem::RupeeSilver08);
+        m.insert("RupeeSilver09".to_string(), FillerItem::RupeeSilver09);
+        m.insert("RupeeSilver10".to_string(), FillerItem::RupeeSilver10);
+        m.insert("RupeeSilver11".to_string(), FillerItem::RupeeSilver11);
+        m.insert("RupeeSilver12".to_string(), FillerItem::RupeeSilver12);
+        m.insert("RupeeSilver13".to_string(), FillerItem::RupeeSilver13);
+        m.insert("RupeeSilver14".to_string(), FillerItem::RupeeSilver14);
+        m.insert("RupeeSilver15".to_string(), FillerItem::RupeeSilver15);
+        m.insert("RupeeSilver16".to_string(), FillerItem::RupeeSilver16);
+        m.insert("RupeeSilver17".to_string(), FillerItem::RupeeSilver17);
+        m.insert("RupeeSilver18".to_string(), FillerItem::RupeeSilver18);
+        m.insert("RupeeSilver19".to_string(), FillerItem::RupeeSilver19);
+        m.insert("RupeeSilver20".to_string(), FillerItem::RupeeSilver20);
+        m.insert("RupeeSilver21".to_string(), FillerItem::RupeeSilver21);
+        m.insert("RupeeSilver22".to_string(), FillerItem::RupeeSilver22);
+        m.insert("RupeeSilver23".to_string(), FillerItem::RupeeSilver23);
+        m.insert("RupeeSilver24".to_string(), FillerItem::RupeeSilver24);
+        m.insert("RupeeSilver25".to_string(), FillerItem::RupeeSilver25);
+        m.insert("RupeeSilver26".to_string(), FillerItem::RupeeSilver26);
+        m.insert("RupeeSilver27".to_string(), FillerItem::RupeeSilver27);
+        m.insert("RupeeSilver28".to_string(), FillerItem::RupeeSilver28);
+        m.insert("RupeeSilver29".to_string(), FillerItem::RupeeSilver29);
+        m.insert("RupeeSilver30".to_string(), FillerItem::RupeeSilver30);
+        m.insert("RupeeSilver31".to_string(), FillerItem::RupeeSilver31);
+        m.insert("RupeeSilver32".to_string(), FillerItem::RupeeSilver32);
+        m.insert("RupeeSilver33".to_string(), FillerItem::RupeeSilver33);
+        m.insert("RupeeSilver34".to_string(), FillerItem::RupeeSilver34);
+        m.insert("RupeeSilver35".to_string(), FillerItem::RupeeSilver35);
+        m.insert("RupeeSilver36".to_string(), FillerItem::RupeeSilver36);
+        m.insert("RupeeSilver37".to_string(), FillerItem::RupeeSilver37);
+        m.insert("RupeeSilver38".to_string(), FillerItem::RupeeSilver38);
+        m.insert("RupeeGold01".to_string(), FillerItem::RupeeGold01);
+        m.insert("RupeeGold02".to_string(), FillerItem::RupeeGold02);
+        m.insert("RupeeGold03".to_string(), FillerItem::RupeeGold03);
+        m.insert("RupeeGold04".to_string(), FillerItem::RupeeGold04);
+        m.insert("RupeeGold05".to_string(), FillerItem::RupeeGold05);
+        m.insert("RupeeGold06".to_string(), FillerItem::RupeeGold06);
+        m.insert("RupeeGold07".to_string(), FillerItem::RupeeGold07);
+        m.insert("RupeeGold08".to_string(), FillerItem::RupeeGold08);
+        m.insert("MonsterGuts".to_string(), FillerItem::MonsterGuts);
+        m.insert("MonsterHorn".to_string(), FillerItem::MonsterHorn);
+        m.insert("MonsterTail".to_string(), FillerItem::MonsterTail);
+        m.insert("HeartPiece01".to_string(), FillerItem::HeartPiece01);
+        m.insert("HeartPiece02".to_string(), FillerItem::HeartPiece02);
+        m.insert("HeartPiece03".to_string(), FillerItem::HeartPiece03);
+        m.insert("HeartPiece04".to_string(), FillerItem::HeartPiece04);
+        m.insert("HeartPiece05".to_string(), FillerItem::HeartPiece05);
+        m.insert("HeartPiece06".to_string(), FillerItem::HeartPiece06);
+        m.insert("HeartPiece07".to_string(), FillerItem::HeartPiece07);
+        m.insert("HeartPiece08".to_string(), FillerItem::HeartPiece08);
+        m.insert("HeartPiece09".to_string(), FillerItem::HeartPiece09);
+        m.insert("HeartPiece10".to_string(), FillerItem::HeartPiece10);
+        m.insert("HeartPiece11".to_string(), FillerItem::HeartPiece11);
+        m.insert("HeartPiece12".to_string(), FillerItem::HeartPiece12);
+        m.insert("HeartPiece13".to_string(), FillerItem::HeartPiece13);
+        m.insert("HeartPiece14".to_string(), FillerItem::HeartPiece14);
+        m.insert("HeartPiece15".to_string(), FillerItem::HeartPiece15);
+        m.insert("HeartPiece16".to_string(), FillerItem::HeartPiece16);
+        m.insert("HeartPiece17".to_string(), FillerItem::HeartPiece17);
+        m.insert("HeartPiece18".to_string(), FillerItem::HeartPiece18);
+        m.insert("HeartPiece19".to_string(), FillerItem::HeartPiece19);
+        m.insert("HeartPiece20".to_string(), FillerItem::HeartPiece20);
+        m.insert("HeartPiece21".to_string(), FillerItem::HeartPiece21);
+        m.insert("HeartPiece22".to_string(), FillerItem::HeartPiece22);
+        m.insert("HeartPiece23".to_string(), FillerItem::HeartPiece23);
+        m.insert("HeartPiece24".to_string(), FillerItem::HeartPiece24);
+        m.insert("HeartPiece25".to_string(), FillerItem::HeartPiece25);
+        m.insert("HeartPiece26".to_string(), FillerItem::HeartPiece26);
+        m.insert("HeartPiece27".to_string(), FillerItem::HeartPiece27);
+        m.insert("HeartContainer01".to_string(), FillerItem::HeartContainer01);
+        m.insert("HeartContainer02".to_string(), FillerItem::HeartContainer02);
+        m.insert("HeartContainer03".to_string(), FillerItem::HeartContainer03);
+        m.insert("HeartContainer04".to_string(), FillerItem::HeartContainer04);
+        m.insert("HeartContainer05".to_string(), FillerItem::HeartContainer05);
+        m.insert("HeartContainer06".to_string(), FillerItem::HeartContainer06);
+        m.insert("HeartContainer07".to_string(), FillerItem::HeartContainer07);
+        m.insert("HeartContainer08".to_string(), FillerItem::HeartContainer08);
+        m.insert("HeartContainer09".to_string(), FillerItem::HeartContainer09);
+        m.insert("HeartContainer10".to_string(), FillerItem::HeartContainer10);
+        m.insert("Bottle01".to_string(), FillerItem::Bottle01);
+        m.insert("Bottle02".to_string(), FillerItem::Bottle02);
+        m.insert("Bottle03".to_string(), FillerItem::Bottle03);
+        m.insert("Bottle04".to_string(), FillerItem::Bottle04);
+        m.insert("Bottle05".to_string(), FillerItem::Bottle05);
+        m.insert("Lamp01".to_string(), FillerItem::Lamp01);
+        m.insert("Lamp02".to_string(), FillerItem::Lamp02);
+        m.insert("Sword01".to_string(), FillerItem::Sword01);
+        m.insert("Sword02".to_string(), FillerItem::Sword02);
+        m.insert("Sword03".to_string(), FillerItem::Sword03);
+        m.insert("Sword04".to_string(), FillerItem::Sword04);
+        m.insert("Glove01".to_string(), FillerItem::Glove01);
+        m.insert("Glove02".to_string(), FillerItem::Glove02);
+        m.insert("Net01".to_string(), FillerItem::Net01);
+        m.insert("Net02".to_string(), FillerItem::Net02);
+        m.insert("Mail01".to_string(), FillerItem::Mail01);
+        m.insert("Mail02".to_string(), FillerItem::Mail02);
+        m.insert("OreYellow".to_string(), FillerItem::OreYellow);
+        m.insert("OreGreen".to_string(), FillerItem::OreGreen);
+        m.insert("OreBlue".to_string(), FillerItem::OreBlue);
+        m.insert("OreRed".to_string(), FillerItem::OreRed);
+        m.insert("HyruleSanctuaryKey".to_string(), FillerItem::HyruleSanctuaryKey);
+        m.insert("LoruleSanctuaryKey".to_string(), FillerItem::LoruleSanctuaryKey);
+        m.insert("EasternCompass".to_string(), FillerItem::EasternCompass);
+        m.insert("EasternKeyBig".to_string(), FillerItem::EasternKeyBig);
+        m.insert("EasternKeySmall01".to_string(), FillerItem::EasternKeySmall01);
+        m.insert("EasternKeySmall02".to_string(), FillerItem::EasternKeySmall02);
+        m.insert("GalesCompass".to_string(), FillerItem::GalesCompass);
+        m.insert("GalesKeyBig".to_string(), FillerItem::GalesKeyBig);
+        m.insert("GalesKeySmall01".to_string(), FillerItem::GalesKeySmall01);
+        m.insert("GalesKeySmall02".to_string(), FillerItem::GalesKeySmall02);
+        m.insert("GalesKeySmall03".to_string(), FillerItem::GalesKeySmall03);
+        m.insert("GalesKeySmall04".to_string(), FillerItem::GalesKeySmall04);
+        m.insert("HeraCompass".to_string(), FillerItem::HeraCompass);
+        m.insert("HeraKeyBig".to_string(), FillerItem::HeraKeyBig);
+        m.insert("HeraKeySmall01".to_string(), FillerItem::HeraKeySmall01);
+        m.insert("HeraKeySmall02".to_string(), FillerItem::HeraKeySmall02);
+        m.insert("DarkCompass".to_string(), FillerItem::DarkCompass);
+        m.insert("DarkKeyBig".to_string(), FillerItem::DarkKeyBig);
+        m.insert("DarkKeySmall01".to_string(), FillerItem::DarkKeySmall01);
+        m.insert("DarkKeySmall02".to_string(), FillerItem::DarkKeySmall02);
+        m.insert("DarkKeySmall03".to_string(), FillerItem::DarkKeySmall03);
+        m.insert("DarkKeySmall04".to_string(), FillerItem::DarkKeySmall04);
+        m.insert("SwampCompass".to_string(), FillerItem::SwampCompass);
+        m.insert("SwampKeyBig".to_string(), FillerItem::SwampKeyBig);
+        m.insert("SwampKeySmall01".to_string(), FillerItem::SwampKeySmall01);
+        m.insert("SwampKeySmall02".to_string(), FillerItem::SwampKeySmall02);
+        m.insert("SwampKeySmall03".to_string(), FillerItem::SwampKeySmall03);
+        m.insert("SwampKeySmall04".to_string(), FillerItem::SwampKeySmall04);
+        m.insert("SkullCompass".to_string(), FillerItem::SkullCompass);
+        m.insert("SkullKeyBig".to_string(), FillerItem::SkullKeyBig);
+        m.insert("SkullKeySmall01".to_string(), FillerItem::SkullKeySmall01);
+        m.insert("SkullKeySmall02".to_string(), FillerItem::SkullKeySmall02);
+        m.insert("SkullKeySmall03".to_string(), FillerItem::SkullKeySmall03);
+        m.insert("ThievesCompass".to_string(), FillerItem::ThievesCompass);
+        m.insert("ThievesKeyBig".to_string(), FillerItem::ThievesKeyBig);
+        m.insert("ThievesKeySmall".to_string(), FillerItem::ThievesKeySmall);
+        m.insert("IceCompass".to_string(), FillerItem::IceCompass);
+        m.insert("IceKeyBig".to_string(), FillerItem::IceKeyBig);
+        m.insert("IceKeySmall01".to_string(), FillerItem::IceKeySmall01);
+        m.insert("IceKeySmall02".to_string(), FillerItem::IceKeySmall02);
+        m.insert("IceKeySmall03".to_string(), FillerItem::IceKeySmall03);
+        m.insert("DesertCompass".to_string(), FillerItem::DesertCompass);
+        m.insert("DesertKeyBig".to_string(), FillerItem::DesertKeyBig);
+        m.insert("DesertKeySmall01".to_string(), FillerItem::DesertKeySmall01);
+        m.insert("DesertKeySmall02".to_string(), FillerItem::DesertKeySmall02);
+        m.insert("DesertKeySmall03".to_string(), FillerItem::DesertKeySmall03);
+        m.insert("DesertKeySmall04".to_string(), FillerItem::DesertKeySmall04);
+        m.insert("DesertKeySmall05".to_string(), FillerItem::DesertKeySmall05);
+        m.insert("TurtleCompass".to_string(), FillerItem::TurtleCompass);
+        m.insert("TurtleKeyBig".to_string(), FillerItem::TurtleKeyBig);
+        m.insert("TurtleKeySmall01".to_string(), FillerItem::TurtleKeySmall01);
+        m.insert("TurtleKeySmall02".to_string(), FillerItem::TurtleKeySmall02);
+        m.insert("TurtleKeySmall03".to_string(), FillerItem::TurtleKeySmall03);
+        m.insert("LoruleCastleCompass".to_string(), FillerItem::LoruleCastleCompass);
+        m.insert("LoruleCastleKeySmall01".to_string(), FillerItem::LoruleCastleKeySmall01);
+        m.insert("LoruleCastleKeySmall02".to_string(), FillerItem::LoruleCastleKeySmall02);
+        m.insert("LoruleCastleKeySmall03".to_string(), FillerItem::LoruleCastleKeySmall03);
+        m.insert("LoruleCastleKeySmall04".to_string(), FillerItem::LoruleCastleKeySmall04);
+        m.insert("LoruleCastleKeySmall05".to_string(), FillerItem::LoruleCastleKeySmall05);
+        m.insert("PendantOfCourage".to_string(), FillerItem::PendantOfCourage);
+        m.insert("PendantOfWisdom".to_string(), FillerItem::PendantOfWisdom);
+        m.insert("PendantOfPower".to_string(), FillerItem::PendantOfPower);
+        m.insert("SageGulley".to_string(), FillerItem::SageGulley);
+        m.insert("SageOren".to_string(), FillerItem::SageOren);
+        m.insert("SageSeres".to_string(), FillerItem::SageSeres);
+        m.insert("SageOsfala".to_string(), FillerItem::SageOsfala);
+        m.insert("SageRosso".to_string(), FillerItem::SageRosso);
+        m.insert("SageIrene".to_string(), FillerItem::SageIrene);
+        m.insert("SageImpa".to_string(), FillerItem::SageImpa);
+        m.insert("ScootFruit".to_string(), FillerItem::ScootFruit);
+        m.insert("FoulFruit".to_string(), FillerItem::FoulFruit);
+        m.insert("Shield".to_string(), FillerItem::Shield);
+        m.insert("GoldBee".to_string(), FillerItem::GoldBee);
+        m.insert("OpenSanctuaryDoors".to_string(), FillerItem::OpenSanctuaryDoors);
+        m.insert("BigBombFlower".to_string(), FillerItem::BigBombFlower);
+        m.insert("StylishWomansHouseOpen".to_string(), FillerItem::StylishWomansHouseOpen);
+        m.insert("SkullEyeRight".to_string(), FillerItem::SkullEyeRight);
+        m.insert("SkullEyeLeft".to_string(), FillerItem::SkullEyeLeft);
+        m.insert("AccessPotionShop".to_string(), FillerItem::AccessPotionShop);
+        m.insert("AccessMilkBar".to_string(), FillerItem::AccessMilkBar);
+        m.insert("AccessHyruleBlacksmith".to_string(), FillerItem::AccessHyruleBlacksmith);
+        m.insert("AccessLoruleCastleField".to_string(), FillerItem::AccessLoruleCastleField);
+        m.insert("Triforce".to_string(), FillerItem::Triforce);
+        m
+    };
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ALogic {
-    /// Logic to use for item placement (Normal, Hard, Glitched (Basic, Advanced, Hell), No Logic)
-    pub mode: ALogicMode,
-    /// Guarantees a Weapon is placed in Ravio's Shop
-    pub assured_weapon: bool,
-    /// Places the Bell in Ravio's Shop
-    pub bell_in_shop: bool,
-    /// Places the Pouch in Ravio's Shop
-    pub pouch_in_shop: bool,
-    /// Places the Pegasus Boots in Ravio's Shop
-    pub boots_in_shop: bool,
-    /// Excludes Cucco Ranch, both Rupee Rushes, Treacherous Tower, Octoball Derby, and Hyrule Hotfoot
-    pub minigames_excluded: bool,
-    /// Swordless Mode
-    pub swordless_mode: bool,
-    /// Shuffle Super Lamp and Super Net
-    pub super_items: bool,
-    /// Skip Trials Door in Lorule Castle
-    pub skip_trials: bool,
-    /// Guarantees Bow of Light will be placed in Lorule Castle
-    pub bow_of_light_in_castle: bool,
-    /// Lamp Requirement. If enabled, the player may have to cross dark rooms without Lamp
-    pub lampless: bool,
+// get key based on value from FILLER_ITEM_MAP in oneliner
+fn filler_item_to_string(filler_item: FillerItem) -> String {
+    FILLER_ITEM_MAP
+        .iter()
+        .find(|&(_, &v)| v == filler_item)
+        .map(|(k, _)| k.clone())
+        .unwrap()
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct AOptions {
-    /// Experimental: Change Hyrule to the nighttime color scheme (until visiting Lorule)
-    pub night_mode: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct AExclusion(pub(crate) HashMap<String, HashSet<String>>);
-
-#[derive(Serialize, Deserialize)]
-pub struct AWorld(HashMap<String, HashSet<String>>);
-
-
-#[derive(Serialize, Deserialize)]
-pub struct AExclude {
-    hyrule: AWorld,
-    lorule: AWorld,
-    dungeons: AWorld,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ASettings {
-    pub logic: ALogic,
-    pub options: AOptions,
-    pub exclusions: AExclusion,
-    pub exclude: AExclude
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ASubregion {
-    name: String,
-    world: AWorld,
-    id: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ALocationInfo {
-    subregion: ASubregion,
-    name: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct AChecks {
-    location_info: ALocationInfo,
-    item: Item,
-}
-
-impl From<ASettings> for Settings {
-    fn from(b: ASettings) -> Settings {
-        unsafe { std::mem::transmute(b) }
-    }
-}
-
-pub fn stringToFillerItem(s: &str) -> FillerItem {
-    match s {
-        "Bow01" => FillerItem::Bow01,
-        "Bow02" => FillerItem::Bow02,
-        "Boomerang01" => FillerItem::Boomerang01,
-        "Boomerang02" => FillerItem::Boomerang02,
-        "Hookshot01" => FillerItem::Hookshot01,
-        "Hookshot02" => FillerItem::Hookshot02,
-        "Bombs01" => FillerItem::Bombs01,
-        "Bombs02" => FillerItem::Bombs02,
-        "FireRod01" => FillerItem::FireRod01,
-        "FireRod02" => FillerItem::FireRod02,
-        "IceRod01" => FillerItem::IceRod01,
-        "IceRod02" => FillerItem::IceRod02,
-        "Hammer01" => FillerItem::Hammer01,
-        "Hammer02" => FillerItem::Hammer02,
-        "SandRod01" => FillerItem::SandRod01,
-        "SandRod02" => FillerItem::SandRod02,
-        "TornadoRod01" => FillerItem::TornadoRod01,
-        "TornadoRod02" => FillerItem::TornadoRod02,
-        "Bell" => FillerItem::Bell,
-        "StaminaScroll" => FillerItem::StaminaScroll,
-        "BowOfLight" => FillerItem::BowOfLight,
-        "PegasusBoots" => FillerItem::PegasusBoots,
-        "Flippers" => FillerItem::Flippers,
-        "RaviosBracelet01" => FillerItem::RaviosBracelet01,
-        "RaviosBracelet02" => FillerItem::RaviosBracelet02,
-        "HylianShield" => FillerItem::HylianShield,
-        "SmoothGem" => FillerItem::SmoothGem,
-        "LetterInABottle" => FillerItem::LetterInABottle,
-        "PremiumMilk" => FillerItem::PremiumMilk,
-        "Pouch" => FillerItem::Pouch,
-        "BeeBadge" => FillerItem::BeeBadge,
-        "HintGlasses" => FillerItem::HintGlasses,
-        "RupeeGreen" => FillerItem::RupeeGreen,
-        "RupeeBlue" => FillerItem::RupeeBlue,
-        "RupeeRed" => FillerItem::RupeeRed,
-        "RupeePurple01" => FillerItem::RupeePurple01,
-        "RupeePurple02" => FillerItem::RupeePurple02,
-        "RupeePurple03" => FillerItem::RupeePurple03,
-        "RupeePurple04" => FillerItem::RupeePurple04,
-        "RupeePurple05" => FillerItem::RupeePurple05,
-        "RupeePurple06" => FillerItem::RupeePurple06,
-        "RupeePurple07" => FillerItem::RupeePurple07,
-        "RupeePurple08" => FillerItem::RupeePurple08,
-        "RupeePurple09" => FillerItem::RupeePurple09,
-        "RupeePurple10" => FillerItem::RupeePurple10,
-        "RupeePurple11" => FillerItem::RupeePurple11,
-        "RupeePurple12" => FillerItem::RupeePurple12,
-        "RupeePurple13" => FillerItem::RupeePurple13,
-        "RupeePurple14" => FillerItem::RupeePurple14,
-        "RupeePurple15" => FillerItem::RupeePurple15,
-        "RupeePurple16" => FillerItem::RupeePurple16,
-        "RupeePurple17" => FillerItem::RupeePurple17,
-        "RupeePurple18" => FillerItem::RupeePurple18,
-        "RupeeSilver01" => FillerItem::RupeeSilver01,
-        "RupeeSilver02" => FillerItem::RupeeSilver02,
-        "RupeeSilver03" => FillerItem::RupeeSilver03,
-        "RupeeSilver04" => FillerItem::RupeeSilver04,
-        "RupeeSilver05" => FillerItem::RupeeSilver05,
-        "RupeeSilver06" => FillerItem::RupeeSilver06,
-        "RupeeSilver07" => FillerItem::RupeeSilver07,
-        "RupeeSilver08" => FillerItem::RupeeSilver08,
-        "RupeeSilver09" => FillerItem::RupeeSilver09,
-        "RupeeSilver10" => FillerItem::RupeeSilver10,
-        "RupeeSilver11" => FillerItem::RupeeSilver11,
-        "RupeeSilver12" => FillerItem::RupeeSilver12,
-        "RupeeSilver13" => FillerItem::RupeeSilver13,
-        "RupeeSilver14" => FillerItem::RupeeSilver14,
-        "RupeeSilver15" => FillerItem::RupeeSilver15,
-        "RupeeSilver16" => FillerItem::RupeeSilver16,
-        "RupeeSilver17" => FillerItem::RupeeSilver17,
-        "RupeeSilver18" => FillerItem::RupeeSilver18,
-        "RupeeSilver19" => FillerItem::RupeeSilver19,
-        "RupeeSilver20" => FillerItem::RupeeSilver20,
-        "RupeeSilver21" => FillerItem::RupeeSilver21,
-        "RupeeSilver22" => FillerItem::RupeeSilver22,
-        "RupeeSilver23" => FillerItem::RupeeSilver23,
-        "RupeeSilver24" => FillerItem::RupeeSilver24,
-        "RupeeSilver25" => FillerItem::RupeeSilver25,
-        "RupeeSilver26" => FillerItem::RupeeSilver26,
-        "RupeeSilver27" => FillerItem::RupeeSilver27,
-        "RupeeSilver28" => FillerItem::RupeeSilver28,
-        "RupeeSilver29" => FillerItem::RupeeSilver29,
-        "RupeeSilver30" => FillerItem::RupeeSilver30,
-        "RupeeSilver31" => FillerItem::RupeeSilver31,
-        "RupeeSilver32" => FillerItem::RupeeSilver32,
-        "RupeeSilver33" => FillerItem::RupeeSilver33,
-        "RupeeSilver34" => FillerItem::RupeeSilver34,
-        "RupeeSilver35" => FillerItem::RupeeSilver35,
-        "RupeeSilver36" => FillerItem::RupeeSilver36,
-        "RupeeSilver37" => FillerItem::RupeeSilver37,
-        "RupeeSilver38" => FillerItem::RupeeSilver38,
-        "RupeeGold01" => FillerItem::RupeeGold01,
-        "RupeeGold02" => FillerItem::RupeeGold02,
-        "RupeeGold03" => FillerItem::RupeeGold03,
-        "RupeeGold04" => FillerItem::RupeeGold04,
-        "RupeeGold05" => FillerItem::RupeeGold05,
-        "RupeeGold06" => FillerItem::RupeeGold06,
-        "RupeeGold07" => FillerItem::RupeeGold07,
-        "RupeeGold08" => FillerItem::RupeeGold08,
-        "MonsterGuts" => FillerItem::MonsterGuts,
-        "MonsterHorn" => FillerItem::MonsterHorn,
-        "MonsterTail" => FillerItem::MonsterTail,
-        "HeartPiece01" => FillerItem::HeartPiece01,
-        "HeartPiece02" => FillerItem::HeartPiece02,
-        "HeartPiece03" => FillerItem::HeartPiece03,
-        "HeartPiece04" => FillerItem::HeartPiece04,
-        "HeartPiece05" => FillerItem::HeartPiece05,
-        "HeartPiece06" => FillerItem::HeartPiece06,
-        "HeartPiece07" => FillerItem::HeartPiece07,
-        "HeartPiece08" => FillerItem::HeartPiece08,
-        "HeartPiece09" => FillerItem::HeartPiece09,
-        "HeartPiece10" => FillerItem::HeartPiece10,
-        "HeartPiece11" => FillerItem::HeartPiece11,
-        "HeartPiece12" => FillerItem::HeartPiece12,
-        "HeartPiece13" => FillerItem::HeartPiece13,
-        "HeartPiece14" => FillerItem::HeartPiece14,
-        "HeartPiece15" => FillerItem::HeartPiece15,
-        "HeartPiece16" => FillerItem::HeartPiece16,
-        "HeartPiece17" => FillerItem::HeartPiece17,
-        "HeartPiece18" => FillerItem::HeartPiece18,
-        "HeartPiece19" => FillerItem::HeartPiece19,
-        "HeartPiece20" => FillerItem::HeartPiece20,
-        "HeartPiece21" => FillerItem::HeartPiece21,
-        "HeartPiece22" => FillerItem::HeartPiece22,
-        "HeartPiece23" => FillerItem::HeartPiece23,
-        "HeartPiece24" => FillerItem::HeartPiece24,
-        "HeartPiece25" => FillerItem::HeartPiece25,
-        "HeartPiece26" => FillerItem::HeartPiece26,
-        "HeartPiece27" => FillerItem::HeartPiece27,
-        "HeartContainer01" => FillerItem::HeartContainer01,
-        "HeartContainer02" => FillerItem::HeartContainer02,
-        "HeartContainer03" => FillerItem::HeartContainer03,
-        "HeartContainer04" => FillerItem::HeartContainer04,
-        "HeartContainer05" => FillerItem::HeartContainer05,
-        "HeartContainer06" => FillerItem::HeartContainer06,
-        "HeartContainer07" => FillerItem::HeartContainer07,
-        "HeartContainer08" => FillerItem::HeartContainer08,
-        "HeartContainer09" => FillerItem::HeartContainer09,
-        "HeartContainer10" => FillerItem::HeartContainer10,
-        "Bottle01" => FillerItem::Bottle01,
-        "Bottle02" => FillerItem::Bottle02,
-        "Bottle03" => FillerItem::Bottle03,
-        "Bottle04" => FillerItem::Bottle04,
-        "Bottle05" => FillerItem::Bottle05,
-        "Lamp01" => FillerItem::Lamp01,
-        "Lamp02" => FillerItem::Lamp02,
-        "Sword01" => FillerItem::Sword01,
-        "Sword02" => FillerItem::Sword02,
-        "Sword03" => FillerItem::Sword03,
-        "Sword04" => FillerItem::Sword04,
-        "Glove01" => FillerItem::Glove01,
-        "Glove02" => FillerItem::Glove02,
-        "Net01" => FillerItem::Net01,
-        "Net02" => FillerItem::Net02,
-        "Mail01" => FillerItem::Mail01,
-        "Mail02" => FillerItem::Mail02,
-        "OreYellow" => FillerItem::OreYellow,
-        "OreGreen" => FillerItem::OreGreen,
-        "OreBlue" => FillerItem::OreBlue,
-        "OreRed" => FillerItem::OreRed,
-        "HyruleSanctuaryKey" => FillerItem::HyruleSanctuaryKey,
-        "LoruleSanctuaryKey" => FillerItem::LoruleSanctuaryKey,
-        "EasternCompass" => FillerItem::EasternCompass,
-        "EasternKeyBig" => FillerItem::EasternKeyBig,
-        "EasternKeySmall01" => FillerItem::EasternKeySmall01,
-        "EasternKeySmall02" => FillerItem::EasternKeySmall02,
-        "GalesCompass" => FillerItem::GalesCompass,
-        "GalesKeyBig" => FillerItem::GalesKeyBig,
-        "GalesKeySmall01" => FillerItem::GalesKeySmall01,
-        "GalesKeySmall02" => FillerItem::GalesKeySmall02,
-        "GalesKeySmall03" => FillerItem::GalesKeySmall03,
-        "GalesKeySmall04" => FillerItem::GalesKeySmall04,
-        "HeraCompass" => FillerItem::HeraCompass,
-        "HeraKeyBig" => FillerItem::HeraKeyBig,
-        "HeraKeySmall01" => FillerItem::HeraKeySmall01,
-        "HeraKeySmall02" => FillerItem::HeraKeySmall02,
-        "DarkCompass" => FillerItem::DarkCompass,
-        "DarkKeyBig" => FillerItem::DarkKeyBig,
-        "DarkKeySmall01" => FillerItem::DarkKeySmall01,
-        "DarkKeySmall02" => FillerItem::DarkKeySmall02,
-        "DarkKeySmall03" => FillerItem::DarkKeySmall03,
-        "DarkKeySmall04" => FillerItem::DarkKeySmall04,
-        "SwampCompass" => FillerItem::SwampCompass,
-        "SwampKeyBig" => FillerItem::SwampKeyBig,
-        "SwampKeySmall01" => FillerItem::SwampKeySmall01,
-        "SwampKeySmall02" => FillerItem::SwampKeySmall02,
-        "SwampKeySmall03" => FillerItem::SwampKeySmall03,
-        "SwampKeySmall04" => FillerItem::SwampKeySmall04,
-        "SkullCompass" => FillerItem::SkullCompass,
-        "SkullKeyBig" => FillerItem::SkullKeyBig,
-        "SkullKeySmall01" => FillerItem::SkullKeySmall01,
-        "SkullKeySmall02" => FillerItem::SkullKeySmall02,
-        "SkullKeySmall03" => FillerItem::SkullKeySmall03,
-        "ThievesCompass" => FillerItem::ThievesCompass,
-        "ThievesKeyBig" => FillerItem::ThievesKeyBig,
-        "ThievesKeySmall" => FillerItem::ThievesKeySmall,
-        "IceCompass" => FillerItem::IceCompass,
-        "IceKeyBig" => FillerItem::IceKeyBig,
-        "IceKeySmall01" => FillerItem::IceKeySmall01,
-        "IceKeySmall02" => FillerItem::IceKeySmall02,
-        "IceKeySmall03" => FillerItem::IceKeySmall03,
-        "DesertCompass" => FillerItem::DesertCompass,
-        "DesertKeyBig" => FillerItem::DesertKeyBig,
-        "DesertKeySmall01" => FillerItem::DesertKeySmall01,
-        "DesertKeySmall02" => FillerItem::DesertKeySmall02,
-        "DesertKeySmall03" => FillerItem::DesertKeySmall03,
-        "DesertKeySmall04" => FillerItem::DesertKeySmall04,
-        "DesertKeySmall05" => FillerItem::DesertKeySmall05,
-        "TurtleCompass" => FillerItem::TurtleCompass,
-        "TurtleKeyBig" => FillerItem::TurtleKeyBig,
-        "TurtleKeySmall01" => FillerItem::TurtleKeySmall01,
-        "TurtleKeySmall02" => FillerItem::TurtleKeySmall02,
-        "TurtleKeySmall03" => FillerItem::TurtleKeySmall03,
-        "LoruleCastleCompass" => FillerItem::LoruleCastleCompass,
-        "LoruleCastleKeySmall01" => FillerItem::LoruleCastleKeySmall01,
-        "LoruleCastleKeySmall02" => FillerItem::LoruleCastleKeySmall02,
-        "LoruleCastleKeySmall03" => FillerItem::LoruleCastleKeySmall03,
-        "LoruleCastleKeySmall04" => FillerItem::LoruleCastleKeySmall04,
-        "LoruleCastleKeySmall05" => FillerItem::LoruleCastleKeySmall05,
-        "PendantOfCourage" => FillerItem::PendantOfCourage,
-        "PendantOfWisdom" => FillerItem::PendantOfWisdom,
-        "PendantOfPower" => FillerItem::PendantOfPower,
-        "SageGulley" => FillerItem::SageGulley,
-        "SageOren" => FillerItem::SageOren,
-        "SageSeres" => FillerItem::SageSeres,
-        "SageOsfala" => FillerItem::SageOsfala,
-        "SageRosso" => FillerItem::SageRosso,
-        "SageIrene" => FillerItem::SageIrene,
-        "SageImpa" => FillerItem::SageImpa,
-        "ScootFruit" => FillerItem::ScootFruit,
-        "FoulFruit" => FillerItem::FoulFruit,
-        "Shield" => FillerItem::Shield,
-        "GoldBee" => FillerItem::GoldBee,
-        "OpenSanctuaryDoors" => FillerItem::OpenSanctuaryDoors,
-        "BigBombFlower" => FillerItem::BigBombFlower,
-        "StylishWomansHouseOpen" => FillerItem::StylishWomansHouseOpen,
-        "SkullEyeRight" => FillerItem::SkullEyeRight,
-        "SkullEyeLeft" => FillerItem::SkullEyeLeft,
-        "AccessPotionShop" => FillerItem::AccessPotionShop,
-        "AccessMilkBar" => FillerItem::AccessMilkBar,
-        "AccessHyruleBlacksmith" => FillerItem::AccessHyruleBlacksmith,
-        "AccessLoruleCastleField" => FillerItem::AccessLoruleCastleField,
-        "Triforce" => FillerItem::Triforce,
-        _ => panic!("Unknown item: {}", s),
+// method that returns the FillerItem value of a key inside lazy static ref FILLER_ITEM_MAP
+pub fn string_to_filler_item(s: &String) -> FillerItem {
+    match FILLER_ITEM_MAP.get(s) {
+        Some(x) => *x,
+        None => panic!("No FillerItem found for {}", s),
     }
 }
 
 #[wasm_bindgen]
-pub fn fill_stuff(jsettings: JsValue, obtained_items_js: JsValue, seed: Seed) -> JsValue {
-    console_error_panic_hook::set_once();
-    let asettings: ASettings = serde_wasm_bindgen::from_value(jsettings).unwrap();
-    let obtained_items_as_string : Vec<String> = serde_wasm_bindgen::from_value(obtained_items_js).unwrap();
-    // converts obtainedItemsAsString to a vector of FillerItem in oneliner
-    let obtained_items : Vec<FillerItem> = obtained_items_as_string.iter().map(|x| stringToFillerItem(x)).collect();
-    let settings : Settings = asettings.into();
+pub struct Cartridge {
+    settings : Settings,
+    seed : Seed,
+}
 
-    log(&format!("Seed:                           {}", seed));
-    //info!("Hash:                           {}", settings.hash().0);
-    log(&format!("Logic:                          {}", match settings.logic.mode {
-        Normal => "Normal",
-        Hard => "Hard",
-        GlitchBasic => "Glitched (Basic)",
-        GlitchAdvanced => "Glitched (Advanced)",
-        GlitchHell => "Glitched (Hell) - Did you really mean to choose this?",
-        NoLogic => "No Logic",
-    }));
-    log(&format!("Super Items:                    {}", if settings.logic.super_items {"Included"} else {"Not Included"}));
-    log(&format!("Trials:                         {}", if settings.logic.skip_trials {"Skipped"} else {"Normal"}));
-    log(&format!("Dark Rooms:                     {}", if settings.logic.lampless {"Lamp Not Required"} else {"Lamp Required"}));
-    log(&format!("Swords:                         {}\n", if settings.logic.swordless_mode {"Swordless Mode - NO SWORDS"} else {"Normal"}));
+#[wasm_bindgen]
+impl Cartridge {
+    #[wasm_bindgen(constructor)]
+    pub fn new(jsettings: JsValue, seed: Seed) -> Cartridge {
+        console_error_panic_hook::set_once();
+        let settings: Settings = serde_wasm_bindgen::from_value(jsettings).unwrap();
 
-
-    let mut rng = StdRng::seed_from_u64(seed as u64);
-
-    let mut world_graph = build_world_graph();
-
-    let mut check_map = prefill_check_map(&mut world_graph);
-
-    let reachable_checks = assumed_search(&mut world_graph, &obtained_items, &mut check_map, &settings); //find_reachable_checks(loc_map, &everything, &mut check_map); //
-
-    // create Vec<string> of reachable checks .name field
-    let mut reachable_checks: Vec<String> = reachable_checks.iter().map(|check| check.name.to_string()).collect();
+        log("Generating cartridge...");
+        log(&format!("Seed:                           {}", seed));
+        //info!("Hash:                           {}", settings.hash().0);
+        log(&format!("Logic:                          {}", match settings.logic.mode {
+            Normal => "Normal",
+            Hard => "Hard",
+            GlitchBasic => "Glitched (Basic)",
+            GlitchAdvanced => "Glitched (Advanced)",
+            GlitchHell => "Glitched (Hell) - Did you really mean to choose this?",
+            NoLogic => "No Logic",
+        }));
+        log(&format!("Super Items:                    {}", if settings.logic.super_items {"Included"} else {"Not Included"}));
+        log(&format!("Trials:                         {}", if settings.logic.skip_trials {"Skipped"} else {"Normal"}));
+        log(&format!("Dark Rooms:                     {}", if settings.logic.lampless {"Lamp Not Required"} else {"Lamp Required"}));
+        log(&format!("Swords:                         {}\n", if settings.logic.swordless_mode {"Swordless Mode - NO SWORDS"} else {"Normal"}));
     
-    serde_wasm_bindgen::to_value(&reachable_checks).unwrap()
+        Cartridge {
+            settings,
+            seed,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_trash_item_names(&self) -> JsValue {
+        let mut rng = StdRng::seed_from_u64(self.seed as u64);
+        let (_progression_pool, trash_pool) = get_items(&self.settings, &mut rng);
+        // convert trash_pool to string using filler_item_to_string
+        let mut trash_pool : Vec<String> = trash_pool.iter().map(|x| filler_item_to_string(*x)).collect();
+        trash_pool.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        
+        serde_wasm_bindgen::to_value(&trash_pool).unwrap()
+    }
+
+    #[wasm_bindgen]
+    pub fn get_progression_item_names(&self) -> JsValue {
+        let mut rng = StdRng::seed_from_u64(self.seed as u64);
+        let (progression_pool, _trash_pool) = get_items(&self.settings, &mut rng);
+        // convert trash_pool to string using filler_item_to_string
+        let mut progression_pool : Vec<String> = progression_pool.iter().map(|x| filler_item_to_string(*x)).collect();
+        progression_pool.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        
+        serde_wasm_bindgen::to_value(&progression_pool).unwrap()
+    }
+
+    #[wasm_bindgen]
+    pub fn get_available_checks(&self, obtained_items_js: JsValue) -> JsValue {
+        let obtained_items_as_string : Vec<String> = serde_wasm_bindgen::from_value(obtained_items_js).unwrap();
+        let obtained_items : Vec<FillerItem> = obtained_items_as_string.iter().map(|x| string_to_filler_item(x)).collect();
+
+        let mut world_graph = build_world_graph();
+        let mut check_map = prefill_check_map(&mut world_graph);
+        let reachable_checks = assumed_search(&mut world_graph, &obtained_items, &mut check_map, &self.settings); //find_reachable_checks(loc_map, &everything, &mut check_map); //
+        let reachable_check_names: Vec<String> = reachable_checks.iter().map(|check| check.name.to_string()).collect();
+        serde_wasm_bindgen::to_value(&reachable_check_names).unwrap()
+    }
 }
