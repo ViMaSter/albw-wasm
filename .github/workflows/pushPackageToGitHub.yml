@@ -15,7 +15,8 @@ jobs:
 
       - name: Install Rust and wasm-bindgen-cli
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rust.sh
+          bash -f rust.sh -y
           cargo install wasm-pack
 
       - name: Build wasm package
