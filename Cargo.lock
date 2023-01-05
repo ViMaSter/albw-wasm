@@ -14,6 +14,7 @@ dependencies = [
 [[package]]
 name = "albw"
 version = "0.1.1"
+source = "git+https://github.com/vimaster/z17-randomizer?branch=master#cc3f8e12194294adff26a94521dba0419ea074f1"
 dependencies = [
  "bytey",
  "csv",
@@ -94,6 +95,7 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 [[package]]
 name = "bytey"
 version = "0.1.1"
+source = "git+https://github.com/vimaster/z17-randomizer?branch=master#cc3f8e12194294adff26a94521dba0419ea074f1"
 dependencies = [
  "bytey-macro",
 ]
@@ -101,6 +103,7 @@ dependencies = [
 [[package]]
 name = "bytey-macro"
 version = "0.1.1"
+source = "git+https://github.com/vimaster/z17-randomizer?branch=master#cc3f8e12194294adff26a94521dba0419ea074f1"
 dependencies = [
  "proc-macro-error",
  "proc-macro2",
@@ -393,6 +396,7 @@ dependencies = [
 [[package]]
 name = "randomizer"
 version = "0.1.2"
+source = "git+https://github.com/vimaster/z17-randomizer?branch=master#cc3f8e12194294adff26a94521dba0419ea074f1"
 dependencies = [
  "albw",
  "crc",
@@ -569,6 +573,7 @@ dependencies = [
 [[package]]
 name = "sys"
 version = "0.1.1"
+source = "git+https://github.com/vimaster/z17-randomizer?branch=master#cc3f8e12194294adff26a94521dba0419ea074f1"
 dependencies = [
  "directories",
  "json",

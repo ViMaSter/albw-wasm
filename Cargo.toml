@@ -7,9 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# randomizer = { git = "https://github.com/rickfay/z17-randomizer", branch = "v0.3.0" }
-randomizer = { path = "../z17-randomizer/randomizer" }
-albw = { path = "../z17-randomizer/albw" }
+randomizer = { git = "https://github.com/vimaster/z17-randomizer", branch = "master" }
+albw = { git = "https://github.com/vimaster/z17-randomizer", branch = "master" }
 getrandom = { version = "0.2", features = ["js"] }
 rand = { version = "0.8.3", features = ["std_rng"] }
 wasm-bindgen = "0.2"
