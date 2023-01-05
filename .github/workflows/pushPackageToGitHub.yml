@@ -12,10 +12,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install latest Node.js
         uses: actions/setup-node@v1
-      - name: Login to npm registry
-        run: npm login --registry=https://npm.pkg.github.com
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Install Rust and wasm-bindgen-cli
         run: |
@@ -31,3 +27,5 @@ jobs:
         working-directory: target
       - name: Publish package
         run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
