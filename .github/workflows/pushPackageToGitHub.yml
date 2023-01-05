@@ -1,0 +1,33 @@
+name: Publish npm package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to npm registry
+        run: npm login --registry=https://npm.pkg.github.com
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install Rust and wasm-bindgen-cli
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+          cargo install wasm-pack
+
+      - name: Build wasm package
+        run: |
+          wasm-pack build --target web
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+      - name: Build node package
+        run: npm run build
+        working-directory: target
+      - name: Publish package
+        run: npm publish
